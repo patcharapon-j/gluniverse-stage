@@ -293,15 +293,16 @@
 /* ── Actor Cards ── */
 
 .glstage-actor-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 8px;
 }
 
 .glstage-actor-card {
     display: flex;
-    gap: 10px;
-    padding: 10px;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px;
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 8px;
@@ -312,8 +313,9 @@
 }
 
 .glstage-actor-preview {
-    width: 60px;
-    height: 70px;
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
     border-radius: 6px;
     overflow: hidden;
     flex-shrink: 0;
@@ -323,21 +325,28 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: top center;
+}
+
+.glstage-actor-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 1;
+    background: rgba(0,0,0,0.5) !important;
+    border-radius: 4px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+.glstage-actor-card:hover .glstage-actor-remove {
+    opacity: 1;
 }
 
 .glstage-actor-fields {
-    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 4px;
     min-width: 0;
-}
-
-.glstage-actor-actions {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    flex-shrink: 0;
 }
 
 /* ── Fields ── */
@@ -432,6 +441,7 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: top center;
     display: block;
 }
 
@@ -562,6 +572,8 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    height: 100%;
+    overflow: hidden;
 }
 
 .glstage-measure-info {
@@ -578,8 +590,8 @@
 .glstage-measure-preview {
     position: relative;
     width: 100%;
-    flex: 1 1 200px;
-    min-height: 150px;
+    flex: 1 1 50%;
+    min-height: 120px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;
@@ -710,6 +722,17 @@
     z-index: 12;
 }
 
+/* ── Measure Settings (bottom half, scrollable) ── */
+
+.glstage-measure-settings {
+    flex: 1 1 50%;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 /* ── Measure Slider Row ── */
 
 .glstage-measure-slider-row {
@@ -726,7 +749,6 @@
     display: flex;
     flex-direction: column;
     gap: 4px;
-    flex-shrink: 0;
 }
 
 .glstage-measure-control-row {
@@ -744,6 +766,7 @@
     height: 28px;
     border-radius: 4px;
     object-fit: cover;
+    object-position: top center;
     flex-shrink: 0;
 }
 

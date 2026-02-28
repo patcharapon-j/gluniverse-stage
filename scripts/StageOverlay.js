@@ -348,7 +348,7 @@ export class StageOverlay {
         const offsetY = actor.offsetY || 0;
 
         el.innerHTML = `
-            <div class="stage-actor-img-wrap" style="transform: scale(${scale}) translate(${offsetX}px, ${offsetY}px);">
+            <div class="stage-actor-img-wrap" style="transform: scale(${scale}) translate(${offsetX}%, ${offsetY}%);">
                 <img class="stage-actor-img" src="${actor.image}" alt="${actor.name}" draggable="false"/>
             </div>
             <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}">${actor.name}</div>
@@ -393,7 +393,7 @@ export class StageOverlay {
             if (actorChanged) {
                 this._crossfadeContent(el, actor, index, hasHighlight);
             } else {
-                imgWrap.style.transform = `scale(${scale}) translate(${offsetX}px, ${offsetY}px)`;
+                imgWrap.style.transform = `scale(${scale}) translate(${offsetX}%, ${offsetY}%)`;
                 if (img.alt !== actor.name) img.alt = actor.name;
                 if (nameEl) {
                     if (nameEl.textContent !== actor.name) nameEl.textContent = actor.name;
@@ -404,7 +404,7 @@ export class StageOverlay {
             // Actor was assigned to a previously empty slot — build content + enter anim
             el.classList.remove('stage-slot-empty');
             el.innerHTML = `
-                <div class="stage-actor-img-wrap" style="transform: scale(${scale}) translate(${offsetX}px, ${offsetY}px);">
+                <div class="stage-actor-img-wrap" style="transform: scale(${scale}) translate(${offsetX}%, ${offsetY}%);">
                     <img class="stage-actor-img" src="${actor.image}" alt="${actor.name}" draggable="false"/>
                 </div>
                 <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}">${actor.name}</div>
@@ -442,7 +442,7 @@ export class StageOverlay {
         Promise.all(fadeOutAnims).then(() => {
             // Swap in new content
             el.innerHTML = `
-                <div class="stage-actor-img-wrap" style="opacity: 0; transform: scale(${scale}) translate(${offsetX}px, ${offsetY}px);">
+                <div class="stage-actor-img-wrap" style="opacity: 0; transform: scale(${scale}) translate(${offsetX}%, ${offsetY}%);">
                     <img class="stage-actor-img" src="${actor.image}" alt="${actor.name}" draggable="false"/>
                 </div>
                 <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}" style="opacity: 0;">${actor.name}</div>

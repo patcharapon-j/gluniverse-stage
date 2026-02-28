@@ -134,15 +134,16 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
         <div class="glstage-actor-card" data-actor-id="${actor.id}">
             <div class="glstage-actor-preview">
                 <img src="${actor.image || 'icons/svg/mystery-man.svg'}" alt="${actor.name}"/>
+                <button class="glstage-actor-remove glstage-btn-icon glstage-btn-danger" data-action="remove-actor" title="${i18n('panel.removeActor')}">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
             <div class="glstage-actor-fields">
                 <div class="glstage-field">
-                    <label>${i18n('panel.name')}</label>
-                    <input type="text" data-field="name" value="${actor.name || ''}" />
+                    <input type="text" data-field="name" value="${actor.name || ''}" placeholder="${i18n('panel.name')}" />
                 </div>
                 <div class="glstage-field glstage-field-row">
-                    <label>${i18n('panel.image')}</label>
-                    <input type="text" data-field="image" value="${actor.image || ''}" />
+                    <input type="text" data-field="image" value="${actor.image || ''}" placeholder="${i18n('panel.image')}" />
                     <button class="glstage-btn-icon" data-action="browse-image" title="${i18n('panel.browse')}">
                         <i class="fas fa-folder-open"></i>
                     </button>
@@ -153,19 +154,14 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
                         <input type="number" data-field="scale" value="${actor.scale ?? 1.0}" step="0.05" min="0.1" max="5" />
                     </div>
                     <div class="glstage-field">
-                        <label>${i18n('panel.offsetX')}</label>
-                        <input type="number" data-field="offsetX" value="${actor.offsetX ?? 0}" step="5" />
+                        <label>X</label>
+                        <input type="number" data-field="offsetX" value="${actor.offsetX ?? 0}" step="1" />
                     </div>
                     <div class="glstage-field">
-                        <label>${i18n('panel.offsetY')}</label>
-                        <input type="number" data-field="offsetY" value="${actor.offsetY ?? 0}" step="5" />
+                        <label>Y</label>
+                        <input type="number" data-field="offsetY" value="${actor.offsetY ?? 0}" step="1" />
                     </div>
                 </div>
-            </div>
-            <div class="glstage-actor-actions">
-                <button class="glstage-btn-icon glstage-btn-danger" data-action="remove-actor" title="${i18n('panel.removeActor')}">
-                    <i class="fas fa-trash"></i>
-                </button>
             </div>
         </div>`;
     }
@@ -306,7 +302,7 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
                 const offsetY = actor.offsetY || 0;
                 html += `
                 <div class="glstage-measure-actor" data-actor-id="${actor.id}">
-                    <div class="glstage-measure-img-wrap" style="transform: scale(${scale}) translate(${offsetX}px, ${offsetY}px);">
+                    <div class="glstage-measure-img-wrap" style="transform: scale(${scale}) translate(${offsetX}%, ${offsetY}%);">
                         <img src="${actor.image || 'icons/svg/mystery-man.svg'}" alt="${actor.name}" draggable="false"/>
                     </div>
                     <div class="glstage-measure-name">${actor.name}</div>
@@ -314,6 +310,9 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
             }
 
             html += `</div></div>`;
+
+            // Bottom half: scrollable settings
+            html += `<div class="glstage-measure-settings">`;
 
             // Screen line / crop slider
             html += `<div class="glstage-measure-slider-row">
@@ -337,15 +336,17 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
                     </div>
                     <div class="glstage-measure-control-field">
                         <label>${i18n('panel.offsetX')}</label>
-                        <input type="number" data-field="offsetX" value="${actor.offsetX ?? 0}" step="5" />
+                        <input type="number" data-field="offsetX" value="${actor.offsetX ?? 0}" step="1" />
                     </div>
                     <div class="glstage-measure-control-field">
                         <label>${i18n('panel.offsetY')}</label>
-                        <input type="number" data-field="offsetY" value="${actor.offsetY ?? 0}" step="5" />
+                        <input type="number" data-field="offsetY" value="${actor.offsetY ?? 0}" step="1" />
                     </div>
                 </div>`;
             }
             html += `</div>`;
+
+            html += `</div>`; // end .glstage-measure-settings
         }
 
         html += `</div>`;
