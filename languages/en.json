@@ -1,0 +1,78 @@
+{
+    "GLSTAGE": {
+        "title": "GLUniverse Stage",
+        "settings": {
+            "stageHeight": {
+                "name": "Stage Height (%)",
+                "hint": "Height of the visual novel stage area as a percentage of the viewport height."
+            },
+            "stageWidth": {
+                "name": "Stage Width (%)",
+                "hint": "Width of the visual novel stage area as a percentage of the viewport width."
+            }
+        },
+        "panel": {
+            "title": "Stage Director",
+            "actors": "Actors",
+            "stage": "Stage",
+            "addActor": "Add Actor",
+            "editActor": "Edit Actor",
+            "removeActor": "Remove Actor",
+            "name": "Name",
+            "image": "Image",
+            "scale": "Scale",
+            "offsetX": "Offset X",
+            "offsetY": "Offset Y",
+            "present": "Show on Stage",
+            "hide": "Hide from Stage",
+            "highlight": "Highlight (Speaking)",
+            "unhighlight": "Unhighlight",
+            "clearStage": "Clear Stage",
+            "showStage": "Show Stage",
+            "hideStage": "Hide Stage",
+            "addSlot": "Add Slot",
+            "removeSlot": "Remove Slot",
+            "emptySlot": "Empty",
+            "animation": "Animation",
+            "triggerAnimation": "Play",
+            "slotPosition": "Position",
+            "guide": "Guide",
+            "browse": "Browse",
+            "stageHeight": "Height",
+            "stageWidth": "Width",
+            "zIndex": "Layer",
+            "measure": "Measure",
+            "measureInfo": "Preview all actors side by side to calibrate scale and positioning. Adjust each actor so feet are level on the floor line.",
+            "floorLine": "Floor Line",
+            "screenLine": "Screen Line",
+            "stageXOffset": "Stage X Offset",
+            "stageYOffset": "Stage Y Offset",
+            "stageYOffsetHint": "Percentage of character to crop from the bottom. The visible portion scales up to fill the stage.",
+            "noActorsToMeasure": "No actors configured. Add actors in the Actors tab first.",
+            "resetScale": "Reset"
+        },
+        "animations": {
+            "none": "None",
+            "bounce": "Bounce",
+            "shake": "Shake",
+            "flip": "Flip",
+            "nod": "Nod",
+            "jiggle": "Jiggle",
+            "fadeIn": "Fade In",
+            "slideIn": "Slide In"
+        },
+        "guide": {
+            "title": "Stage Setup Guide",
+            "intro": "Configure your actors to display consistently across all player screens.",
+            "step1title": "1. Add Actors",
+            "step1": "Click 'Add Actor' to create characters. Give them a name and select their image. Use character art with transparent backgrounds for best results.",
+            "step2title": "2. Configure Scale & Offset",
+            "step2": "Adjust Scale to resize the actor (1.0 = 100%). Use Offset X/Y to fine-tune positioning within the stage. These values sync to all players.",
+            "step3title": "3. Manage the Stage",
+            "step3": "Switch to the Stage tab to control what players see. Add slots (positions) for characters. Assign actors to slots or leave them empty for spacing.",
+            "step4title": "4. Highlight & Animate",
+            "step4": "Click Highlight on a character to dim others and indicate the speaker. Use animations for expressive moments — bounce for excitement, shake for anger, nod for agreement.",
+            "tip": "Tip: Use 'Show Stage' to make the stage visible to all players. 'Clear Stage' removes all characters but keeps actors configured."
+        }
+    }
+}

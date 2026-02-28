@@ -1,0 +1,36 @@
+{
+    "id": "gluniverse-stage",
+    "title": "GLUniverse Stage - Visual Novel Presenter",
+    "description": "A visual novel style presentation system. GMs manage character actors with images, present them on-screen for all players pinned at the bottom, adjust positioning, highlight speakers, and trigger animations like flip, bounce, shake, and more.",
+    "version": "1.0.0",
+    "authors": [
+        {
+            "name": "GLUniverse"
+        }
+    ],
+    "compatibility": {
+        "minimum": "13",
+        "verified": "13"
+    },
+    "esmodules": [
+        "scripts/module.js"
+    ],
+    "styles": [
+        "styles/main.css",
+        "styles/animations.css"
+    ],
+    "languages": [
+        {
+            "lang": "en",
+            "name": "English",
+            "path": "languages/en.json"
+        }
+    ],
+    "socket": true,
+    "url": "https://github.com/patcharapon-j/gluniverse-stage",
+    "manifest": "https://github.com/patcharapon-j/gluniverse-stage/releases/latest/download/module.json",
+    "download": "https://github.com/patcharapon-j/gluniverse-stage/releases/latest/download/module.zip",
+    "bugs": "https://github.com/patcharapon-j/gluniverse-stage/issues",
+    "readme": "https://github.com/patcharapon-j/gluniverse-stage/blob/main/README.md",
+    "license": "MIT"
+}
