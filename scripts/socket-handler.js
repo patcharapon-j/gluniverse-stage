@@ -1,6 +1,7 @@
 import { MODULE_ID } from './settings.js';
 
 const SOCKET_NAME = `module.${MODULE_ID}`;
+const ALLOWED_ANIMATIONS = new Set(['bounce', 'shake', 'flip', 'nod', 'jiggle', 'fadeIn', 'slideIn']);
 
 export const SOCKET_EVENTS = {
     UPDATE_STAGE: 'updateStage',
@@ -30,19 +31,26 @@ function handleSocketMessage(data) {
 
     switch (data.type) {
         case SOCKET_EVENTS.UPDATE_STAGE:
+            if (!isSenderGM(data) || !data.state || typeof data.state !== 'object') return;
             if (_onStageUpdate) _onStageUpdate(data.state);
             break;
         case SOCKET_EVENTS.TRIGGER_ANIMATION:
+            if (!isSenderGM(data) || !Number.isInteger(data.slotIndex) || !ALLOWED_ANIMATIONS.has(data.animation)) return;
             if (_onAnimation) _onAnimation(data.slotIndex, data.animation);
             break;
         case SOCKET_EVENTS.REQUEST_SYNC:
             handleSyncRequest(data);
             break;
         case SOCKET_EVENTS.SYNC_STATE:
+            if (!isSenderGM(data) || !data.state || typeof data.state !== 'object') return;
             if (data.targetId && data.targetId !== game.user.id) return;
             if (_onStageUpdate) _onStageUpdate(data.state);
             break;
     }
+}
+
+function isSenderGM(data) {
+    return game.users?.get(data.senderId)?.isGM === true;
 }
 
 function handleLocalMessage(data) {

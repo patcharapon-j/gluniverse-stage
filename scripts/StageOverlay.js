@@ -2,6 +2,33 @@ import { MODULE_ID, getSetting } from './settings.js';
 
 const SHOW_DURATION = 400;
 const HIDE_DURATION = 350;
+const DEFAULT_ACTOR_IMAGE = 'icons/svg/mystery-man.svg';
+
+const HTML_ESCAPE = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+};
+
+function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPE[ch]);
+}
+
+function escapeAttr(value) {
+    return escapeHTML(value);
+}
+
+function clampNumber(value, min, max, fallback) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(Math.max(number, min), max);
+}
+
+function actorImage(actor) {
+    return actor?.image || DEFAULT_ACTOR_IMAGE;
+}
 
 /**
  * The visual novel stage overlay rendered at the bottom of the screen.
@@ -343,15 +370,18 @@ export class StageOverlay {
         if (isHighlighted) el.classList.add('highlighted');
         if (isDimmed) el.classList.add('dimmed');
 
-        const scale = actor.scale || 1.0;
-        const offsetX = actor.offsetX || 0;
-        const offsetY = actor.offsetY || 0;
+        const scale = clampNumber(actor.scale, 0.1, 5, 1.0);
+        const offsetX = clampNumber(actor.offsetX, -500, 500, 0);
+        const offsetY = clampNumber(actor.offsetY, -500, 500, 0);
+        const image = escapeAttr(actorImage(actor));
+        const nameAttr = escapeAttr(actor.name || '');
+        const nameHTML = escapeHTML(actor.name || '');
 
         el.innerHTML = `
             <div class="stage-actor-img-wrap" style="transform: scale(${scale}) translate(${offsetX}%, ${offsetY}%);">
-                <img class="stage-actor-img" src="${actor.image}" alt="${actor.name}" draggable="false"/>
+                <img class="stage-actor-img" src="${image}" alt="${nameAttr}" draggable="false"/>
             </div>
-            <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}">${actor.name}</div>
+            <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}">${nameHTML}</div>
         `;
         return el;
     }
@@ -380,16 +410,16 @@ export class StageOverlay {
         el.classList.toggle('highlighted', isHighlighted);
         el.classList.toggle('dimmed', isDimmed);
 
-        const scale = actor.scale || 1.0;
-        const offsetX = actor.offsetX || 0;
-        const offsetY = actor.offsetY || 0;
+        const scale = clampNumber(actor.scale, 0.1, 5, 1.0);
+        const offsetX = clampNumber(actor.offsetX, -500, 500, 0);
+        const offsetY = clampNumber(actor.offsetY, -500, 500, 0);
 
         const imgWrap = el.querySelector('.stage-actor-img-wrap');
         const img = el.querySelector('.stage-actor-img');
         const nameEl = el.querySelector('.stage-actor-name');
 
         if (imgWrap && img) {
-            const actorChanged = img.getAttribute('src') !== actor.image;
+            const actorChanged = img.getAttribute('src') !== actorImage(actor);
             if (actorChanged) {
                 this._crossfadeContent(el, actor, index, hasHighlight);
             } else {
@@ -405,9 +435,9 @@ export class StageOverlay {
             el.classList.remove('stage-slot-empty');
             el.innerHTML = `
                 <div class="stage-actor-img-wrap" style="transform: scale(${scale}) translate(${offsetX}%, ${offsetY}%);">
-                    <img class="stage-actor-img" src="${actor.image}" alt="${actor.name}" draggable="false"/>
+                    <img class="stage-actor-img" src="${escapeAttr(actorImage(actor))}" alt="${escapeAttr(actor.name || '')}" draggable="false"/>
                 </div>
-                <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}">${actor.name}</div>
+                <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}">${escapeHTML(actor.name || '')}</div>
             `;
             el.classList.add('glstage-slot-entering');
             el.addEventListener('animationend', () => {
@@ -422,9 +452,12 @@ export class StageOverlay {
      */
     _crossfadeContent(el, actor, index, hasHighlight) {
         const isHighlighted = this._state.highlightedSlot === index;
-        const scale = actor.scale || 1.0;
-        const offsetX = actor.offsetX || 0;
-        const offsetY = actor.offsetY || 0;
+        const scale = clampNumber(actor.scale, 0.1, 5, 1.0);
+        const offsetX = clampNumber(actor.offsetX, -500, 500, 0);
+        const offsetY = clampNumber(actor.offsetY, -500, 500, 0);
+        const image = escapeAttr(actorImage(actor));
+        const nameAttr = escapeAttr(actor.name || '');
+        const nameHTML = escapeHTML(actor.name || '');
 
         // Fade out + subtle downward drift
         const oldChildren = el.querySelectorAll('.stage-actor-img-wrap, .stage-actor-name');
@@ -443,9 +476,9 @@ export class StageOverlay {
             // Swap in new content
             el.innerHTML = `
                 <div class="stage-actor-img-wrap" style="opacity: 0; transform: scale(${scale}) translate(${offsetX}%, ${offsetY}%);">
-                    <img class="stage-actor-img" src="${actor.image}" alt="${actor.name}" draggable="false"/>
+                    <img class="stage-actor-img" src="${image}" alt="${nameAttr}" draggable="false"/>
                 </div>
-                <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}" style="opacity: 0;">${actor.name}</div>
+                <div class="stage-actor-name ${isHighlighted ? 'highlighted' : ''}" style="opacity: 0;">${nameHTML}</div>
             `;
 
             // Fade in + subtle upward rise

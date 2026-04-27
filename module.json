@@ -2,7 +2,7 @@
     "id": "gluniverse-stage",
     "title": "GLUniverse Stage - Visual Novel Presenter",
     "description": "A visual novel style presentation system. GMs manage character actors with images, present them on-screen for all players pinned at the bottom, adjust positioning, highlight speakers, and trigger animations like flip, bounce, shake, and more.",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "authors": [
         {
             "name": "GLUniverse"

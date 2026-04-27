@@ -1,6 +1,47 @@
 import { MODULE_ID, getSetting, setSetting } from './settings.js';
 import { emitSocket, SOCKET_EVENTS } from './socket-handler.js';
 
+const DEFAULT_ACTOR_IMAGE = 'icons/svg/mystery-man.svg';
+
+function clampNumber(value, min, max, fallback) {
+    const number = Number(value);
+    if (!Number.isFinite(number)) return fallback;
+    return Math.min(Math.max(number, min), max);
+}
+
+function cleanString(value, fallback, maxLength = 512) {
+    const string = String(value ?? fallback ?? '').trim();
+    return (string || fallback || '').slice(0, maxLength);
+}
+
+function normalizeActorData(data = {}) {
+    return {
+        name: cleanString(data.name, 'New Actor', 160),
+        image: cleanString(data.image, DEFAULT_ACTOR_IMAGE, 1024),
+        scale: clampNumber(data.scale, 0.1, 5, 1.0),
+        offsetX: clampNumber(data.offsetX, -500, 500, 0),
+        offsetY: clampNumber(data.offsetY, -500, 500, 0),
+        measureHidden: data.measureHidden === true
+    };
+}
+
+function normalizeActorUpdates(updates = {}) {
+    const normalized = {};
+    if ('name' in updates) normalized.name = cleanString(updates.name, 'New Actor', 160);
+    if ('image' in updates) normalized.image = cleanString(updates.image, DEFAULT_ACTOR_IMAGE, 1024);
+    if ('scale' in updates) normalized.scale = clampNumber(updates.scale, 0.1, 5, 1.0);
+    if ('offsetX' in updates) normalized.offsetX = clampNumber(updates.offsetX, -500, 500, 0);
+    if ('offsetY' in updates) normalized.offsetY = clampNumber(updates.offsetY, -500, 500, 0);
+    if ('measureHidden' in updates) normalized.measureHidden = updates.measureHidden === true;
+    return normalized;
+}
+
+function normalizeSlotUpdates(updates = {}) {
+    const normalized = {};
+    if ('zIndex' in updates) normalized.zIndex = Math.round(clampNumber(updates.zIndex, -10, 10, 0));
+    return normalized;
+}
+
 /**
  * Manages the actor library and stage state.
  * GM-only operations emit socket events to sync all clients.
@@ -26,7 +67,7 @@ export class StageManager {
     async addActor({ name, image, scale = 1.0, offsetX = 0, offsetY = 0 }) {
         const actors = this.getActors();
         const id = foundry.utils.randomID();
-        actors.push({ id, name, image, scale, offsetX, offsetY });
+        actors.push({ id, ...normalizeActorData({ name, image, scale, offsetX, offsetY }) });
         await setSetting('actorLibrary', actors);
         this._notifySubscribers();
         return id;
@@ -36,7 +77,9 @@ export class StageManager {
         const actors = this.getActors();
         const idx = actors.findIndex(a => a.id === id);
         if (idx === -1) return;
-        Object.assign(actors[idx], updates);
+        const normalizedUpdates = normalizeActorUpdates(updates);
+        if (!Object.keys(normalizedUpdates).length) return;
+        Object.assign(actors[idx], normalizedUpdates);
         await setSetting('actorLibrary', actors);
 
         // If this actor is on stage, update stage too
@@ -99,6 +142,7 @@ export class StageManager {
         const state = this.getStageState();
         state.stageHeight = getSetting('stageHeight');
         state.stageWidth = getSetting('stageWidth');
+        state.stageXOffset = getSetting('stageXOffset');
         state.stageYOffset = getSetting('stageYOffset');
         // Resolve actor data for each slot
         const actors = this.getActors();
@@ -161,7 +205,9 @@ export class StageManager {
     async updateSlot(slotIndex, updates) {
         const state = this.getStageState();
         if (slotIndex < 0 || slotIndex >= state.slots.length) return;
-        Object.assign(state.slots[slotIndex], updates);
+        const normalizedUpdates = normalizeSlotUpdates(updates);
+        if (!Object.keys(normalizedUpdates).length) return;
+        Object.assign(state.slots[slotIndex], normalizedUpdates);
         await this._saveAndBroadcastStage(state);
         this._notifySubscribers();
     }
@@ -170,7 +216,7 @@ export class StageManager {
         const state = this.getStageState();
         if (slotIndex < 0 || slotIndex >= state.slots.length) return;
         const actor = actorId ? this.getActorById(actorId) : null;
-        state.slots[slotIndex].actorId = actorId;
+        state.slots[slotIndex].actorId = actor ? actor.id : null;
         state.slots[slotIndex].actor = actor;
         await this._saveAndBroadcastStage(state);
         this._notifySubscribers();
@@ -178,7 +224,8 @@ export class StageManager {
 
     async setHighlight(slotIndex) {
         const state = this.getStageState();
-        state.highlightedSlot = slotIndex;
+        const index = Number(slotIndex);
+        state.highlightedSlot = Number.isInteger(index) && index >= 0 && index < state.slots.length ? index : -1;
         await this._saveAndBroadcastStage(state);
         this._notifySubscribers();
     }
@@ -192,6 +239,7 @@ export class StageManager {
     }
 
     triggerAnimation(slotIndex, animation) {
+        if (!game.user.isGM) return;
         emitSocket({
             type: SOCKET_EVENTS.TRIGGER_ANIMATION,
             slotIndex,

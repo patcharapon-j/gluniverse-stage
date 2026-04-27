@@ -2,6 +2,40 @@ import { MODULE_ID, getSetting, setSetting } from './settings.js';
 import { StageManager } from './StageManager.js';
 
 const i18n = (key) => game.i18n.localize(`GLSTAGE.${key}`);
+const DEFAULT_ACTOR_IMAGE = 'icons/svg/mystery-man.svg';
+
+const HTML_ESCAPE = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+};
+
+function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => HTML_ESCAPE[ch]);
+}
+
+function escapeAttr(value) {
+    return escapeHTML(value);
+}
+
+function finiteNumber(value, fallback = 0) {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+}
+
+function actorDisplayImage(actor) {
+    return actor?.image || DEFAULT_ACTOR_IMAGE;
+}
+
+function foundryActorImage(actor) {
+    return actor?.prototypeToken?.texture?.src || actor?.img || DEFAULT_ACTOR_IMAGE;
+}
+
+function tokenDisplayImage(tokenDocument) {
+    return tokenDocument?.texture?.src || foundryActorImage(tokenDocument?.actor);
+}
 
 /**
  * GM-only control panel for managing actors and the visual novel stage.
@@ -43,6 +77,7 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
             actors: mgr.getActors(),
             stageState: mgr.getFullState(),
             isGM: game.user.isGM,
+            foundryActors: [...(game.actors?.contents ?? [])].sort((a, b) => a.name.localeCompare(b.name)),
             animations: ['none', 'bounce', 'shake', 'flip', 'nod', 'jiggle', 'fadeIn', 'slideIn']
         };
     }
@@ -114,10 +149,22 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
             <button class="glstage-btn glstage-btn-add" data-action="add-actor">
                 <i class="fas fa-plus"></i> ${i18n('panel.addActor')}
             </button>
+            <button class="glstage-btn" data-action="import-selected-token">
+                <i class="fas fa-user-plus"></i> ${i18n('panel.importSelectedToken')}
+            </button>
+            <select class="glstage-import-actor-select" data-action="foundry-actor-select">
+                <option value="">${i18n('panel.selectFoundryActor')}</option>
+                ${(ctx.foundryActors || []).map(actor =>
+                    `<option value="${escapeAttr(actor.id)}">${escapeHTML(actor.name)}</option>`
+                ).join('')}
+            </select>
+            <button class="glstage-btn" data-action="import-foundry-actor">
+                <i class="fas fa-file-import"></i> ${i18n('panel.importFoundryActor')}
+            </button>
         </div>`;
 
         if (ctx.actors.length === 0) {
-            html += `<div class="glstage-empty">No actors configured. Click "Add Actor" to get started.</div>`;
+            html += `<div class="glstage-empty">${i18n('panel.noActorsConfigured')}</div>`;
         } else {
             html += `<div class="glstage-actor-list">`;
             for (const actor of ctx.actors) {
@@ -130,20 +177,27 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
     }
 
     _buildActorCard(actor) {
+        const actorId = escapeAttr(actor.id);
+        const actorName = escapeAttr(actor.name || '');
+        const actorImage = escapeAttr(actorDisplayImage(actor));
+        const scale = finiteNumber(actor.scale, 1.0);
+        const offsetX = finiteNumber(actor.offsetX, 0);
+        const offsetY = finiteNumber(actor.offsetY, 0);
+
         return `
-        <div class="glstage-actor-card" data-actor-id="${actor.id}">
+        <div class="glstage-actor-card" data-actor-id="${actorId}">
             <div class="glstage-actor-preview">
-                <img src="${actor.image || 'icons/svg/mystery-man.svg'}" alt="${actor.name}"/>
+                <img src="${actorImage}" alt="${actorName}"/>
                 <button class="glstage-actor-remove glstage-btn-icon glstage-btn-danger" data-action="remove-actor" title="${i18n('panel.removeActor')}">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
             <div class="glstage-actor-fields">
                 <div class="glstage-field">
-                    <input type="text" data-field="name" value="${actor.name || ''}" placeholder="${i18n('panel.name')}" />
+                    <input type="text" data-field="name" value="${actorName}" placeholder="${i18n('panel.name')}" />
                 </div>
                 <div class="glstage-field glstage-field-row">
-                    <input type="text" data-field="image" value="${actor.image || ''}" placeholder="${i18n('panel.image')}" />
+                    <input type="text" data-field="image" value="${escapeAttr(actor.image || '')}" placeholder="${i18n('panel.image')}" />
                     <button class="glstage-btn-icon" data-action="browse-image" title="${i18n('panel.browse')}">
                         <i class="fas fa-folder-open"></i>
                     </button>
@@ -151,15 +205,15 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
                 <div class="glstage-field-group">
                     <div class="glstage-field">
                         <label>${i18n('panel.scale')}</label>
-                        <input type="number" data-field="scale" value="${actor.scale ?? 1.0}" step="0.05" min="0.1" max="5" />
+                        <input type="number" data-field="scale" value="${scale}" step="0.05" min="0.1" max="5" />
                     </div>
                     <div class="glstage-field">
                         <label>X</label>
-                        <input type="number" data-field="offsetX" value="${actor.offsetX ?? 0}" step="1" />
+                        <input type="number" data-field="offsetX" value="${offsetX}" step="1" />
                     </div>
                     <div class="glstage-field">
                         <label>Y</label>
-                        <input type="number" data-field="offsetY" value="${actor.offsetY ?? 0}" step="1" />
+                        <input type="number" data-field="offsetY" value="${offsetY}" step="1" />
                     </div>
                 </div>
             </div>
@@ -172,10 +226,10 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
         const isVisible = state.visible;
 
         let html = `<div class="glstage-tab-content glstage-stage-tab">`;
-        const currentHeight = state.stageHeight || getSetting('stageHeight') || 40;
-        const currentWidth = state.stageWidth || getSetting('stageWidth') || 100;
-        const currentXOffset = state.stageXOffset ?? getSetting('stageXOffset') ?? 0;
-        const currentYOffset = state.stageYOffset ?? getSetting('stageYOffset') ?? 0;
+        const currentHeight = finiteNumber(state.stageHeight || getSetting('stageHeight'), 40);
+        const currentWidth = finiteNumber(state.stageWidth || getSetting('stageWidth'), 100);
+        const currentXOffset = finiteNumber(state.stageXOffset ?? getSetting('stageXOffset'), 0);
+        const currentYOffset = finiteNumber(state.stageYOffset ?? getSetting('stageYOffset'), 0);
         html += `<div class="glstage-toolbar">
             <button class="glstage-btn ${isVisible ? 'glstage-btn-active' : ''}" data-action="toggle-visibility">
                 <i class="fas fa-${isVisible ? 'eye' : 'eye-slash'}"></i>
@@ -213,7 +267,7 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
 
         const slots = state.slots || [];
         if (slots.length === 0) {
-            html += `<div class="glstage-empty">No slots on stage. Click "Add Slot" to create character positions.</div>`;
+            html += `<div class="glstage-empty">${i18n('panel.noSlotsConfigured')}</div>`;
         } else {
             html += `<div class="glstage-slot-list">`;
             for (let i = 0; i < slots.length; i++) {
@@ -233,7 +287,7 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
         // Build actor <option> list
         let actorOptions = `<option value="">${i18n('panel.emptySlot')}</option>`;
         for (const a of actors) {
-            actorOptions += `<option value="${a.id}" ${a.id === actorId ? 'selected' : ''}>${a.name}</option>`;
+            actorOptions += `<option value="${escapeAttr(a.id)}" ${a.id === actorId ? 'selected' : ''}>${escapeHTML(a.name)}</option>`;
         }
 
         // Animation select
@@ -242,13 +296,15 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
             `<option value="${a}">${i18n(`animations.${a}`)}</option>`
         ).join('');
 
-        const zIndex = slot.zIndex ?? 0;
+        const zIndex = finiteNumber(slot.zIndex, 0);
+        const actorImage = actor ? escapeAttr(actorDisplayImage(actor)) : '';
+        const actorName = actor ? escapeAttr(actor.name || '') : '';
 
         return `
         <div class="glstage-slot-card ${isHighlighted ? 'highlighted' : ''}" data-slot-index="${index}" draggable="true">
             <div class="glstage-slot-preview">
                 ${actor
-                    ? `<img class="glstage-slot-thumb" src="${actor.image}" alt="${actor.name}"/>`
+                    ? `<img class="glstage-slot-thumb" src="${actorImage}" alt="${actorName}"/>`
                     : `<div class="glstage-slot-empty-preview"><i class="fas fa-user-plus"></i></div>`}
                 <span class="glstage-slot-number">#${index + 1}</span>
             </div>
@@ -276,7 +332,7 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
 
     _buildMeasureTab(ctx) {
         const actors = ctx.actors;
-        const stageYOffset = ctx.stageState.stageYOffset ?? getSetting('stageYOffset') ?? 0;
+        const stageYOffset = finiteNumber(ctx.stageState.stageYOffset ?? getSetting('stageYOffset'), 0);
 
         let html = `<div class="glstage-tab-content glstage-measure-tab">`;
         html += `<div class="glstage-measure-info">${i18n('panel.measureInfo')}</div>`;
@@ -297,15 +353,19 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
                 <div class="glstage-measure-characters">`;
 
             for (const actor of actors) {
-                const scale = actor.scale || 1.0;
-                const offsetX = actor.offsetX || 0;
-                const offsetY = actor.offsetY || 0;
+                if (actor.measureHidden) continue;
+                const scale = finiteNumber(actor.scale, 1.0);
+                const offsetX = finiteNumber(actor.offsetX, 0);
+                const offsetY = finiteNumber(actor.offsetY, 0);
+                const actorId = escapeAttr(actor.id);
+                const actorName = escapeAttr(actor.name || '');
+                const actorImage = escapeAttr(actorDisplayImage(actor));
                 html += `
-                <div class="glstage-measure-actor" data-actor-id="${actor.id}">
+                <div class="glstage-measure-actor" data-actor-id="${actorId}">
                     <div class="glstage-measure-img-wrap" style="transform: scale(${scale}) translate(${offsetX}%, ${offsetY}%);">
-                        <img src="${actor.image || 'icons/svg/mystery-man.svg'}" alt="${actor.name}" draggable="false"/>
+                        <img src="${actorImage}" alt="${actorName}" draggable="false"/>
                     </div>
-                    <div class="glstage-measure-name">${actor.name}</div>
+                    <div class="glstage-measure-name">${escapeHTML(actor.name)}</div>
                 </div>`;
             }
 
@@ -326,21 +386,31 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
             // Per-actor controls below the preview
             html += `<div class="glstage-measure-controls">`;
             for (const actor of actors) {
+                const isHidden = actor.measureHidden === true;
+                const actorId = escapeAttr(actor.id);
+                const actorName = escapeAttr(actor.name || '');
+                const actorImage = escapeAttr(actorDisplayImage(actor));
+                const scale = finiteNumber(actor.scale, 1.0);
+                const offsetX = finiteNumber(actor.offsetX, 0);
+                const offsetY = finiteNumber(actor.offsetY, 0);
                 html += `
-                <div class="glstage-measure-control-row" data-actor-id="${actor.id}">
-                    <img class="glstage-measure-control-thumb" src="${actor.image || 'icons/svg/mystery-man.svg'}" alt="${actor.name}"/>
-                    <span class="glstage-measure-control-name">${actor.name}</span>
+                <div class="glstage-measure-control-row ${isHidden ? 'is-hidden' : ''}" data-actor-id="${actorId}">
+                    <img class="glstage-measure-control-thumb" src="${actorImage}" alt="${actorName}"/>
+                    <span class="glstage-measure-control-name">${escapeHTML(actor.name)}</span>
+                    <button class="glstage-btn-sm ${isHidden ? 'glstage-btn-active' : ''}" data-action="toggle-measure-hidden" title="${isHidden ? i18n('panel.showInMeasure') : i18n('panel.hideInMeasure')}">
+                        <i class="fas fa-${isHidden ? 'eye-slash' : 'eye'}"></i>
+                    </button>
                     <div class="glstage-measure-control-field">
                         <label>${i18n('panel.scale')}</label>
-                        <input type="number" data-field="scale" value="${actor.scale ?? 1.0}" step="0.05" min="0.1" max="5" />
+                        <input type="number" data-field="scale" value="${scale}" step="0.05" min="0.1" max="5" />
                     </div>
                     <div class="glstage-measure-control-field">
                         <label>${i18n('panel.offsetX')}</label>
-                        <input type="number" data-field="offsetX" value="${actor.offsetX ?? 0}" step="1" />
+                        <input type="number" data-field="offsetX" value="${offsetX}" step="1" />
                     </div>
                     <div class="glstage-measure-control-field">
                         <label>${i18n('panel.offsetY')}</label>
-                        <input type="number" data-field="offsetY" value="${actor.offsetY ?? 0}" step="1" />
+                        <input type="number" data-field="offsetY" value="${offsetY}" step="1" />
                     </div>
                 </div>`;
             }
@@ -377,7 +447,18 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
 
         // Add actor
         el.querySelector('[data-action="add-actor"]')?.addEventListener('click', async () => {
-            await mgr.addActor({ name: 'New Actor', image: 'icons/svg/mystery-man.svg' });
+            await mgr.addActor({ name: i18n('panel.newActor'), image: DEFAULT_ACTOR_IMAGE });
+        });
+
+        // Import selected canvas tokens
+        el.querySelector('[data-action="import-selected-token"]')?.addEventListener('click', async () => {
+            await this._importSelectedTokens();
+        });
+
+        // Import from Foundry Actor directory
+        el.querySelector('[data-action="import-foundry-actor"]')?.addEventListener('click', async () => {
+            const select = el.querySelector('[data-action="foundry-actor-select"]');
+            await this._importFoundryActor(select?.value);
         });
 
         // Actor field changes
@@ -413,6 +494,46 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
                 if (confirmed) await mgr.removeActor(actorId);
             });
         });
+    }
+
+    async _importSelectedTokens() {
+        const tokens = canvas?.tokens?.controlled ?? [];
+        if (!tokens.length) {
+            ui.notifications.warn(i18n('panel.noSelectedToken'));
+            return;
+        }
+
+        const mgr = StageManager.getInstance();
+        for (const token of tokens) {
+            const document = token.document;
+            await mgr.addActor({
+                name: document?.name || document?.actor?.name || i18n('panel.newActor'),
+                image: tokenDisplayImage(document)
+            });
+        }
+
+        ui.notifications.info(tokens.length === 1
+            ? i18n('panel.actorImported')
+            : game.i18n.format('GLSTAGE.panel.actorsImported', { count: tokens.length }));
+    }
+
+    async _importFoundryActor(actorId) {
+        if (!actorId) {
+            ui.notifications.warn(i18n('panel.noFoundryActorSelected'));
+            return;
+        }
+
+        const actor = game.actors?.get(actorId);
+        if (!actor) {
+            ui.notifications.warn(i18n('panel.noFoundryActorSelected'));
+            return;
+        }
+
+        await StageManager.getInstance().addActor({
+            name: actor.name || i18n('panel.newActor'),
+            image: foundryActorImage(actor)
+        });
+        ui.notifications.info(i18n('panel.actorImported'));
     }
 
     _bindStageListeners(el) {
@@ -604,6 +725,11 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
         // Per-actor controls
         el.querySelectorAll('.glstage-measure-control-row').forEach(row => {
             const actorId = row.dataset.actorId;
+
+            row.querySelector('[data-action="toggle-measure-hidden"]')?.addEventListener('click', async () => {
+                const actor = mgr.getActorById(actorId);
+                await mgr.updateActor(actorId, { measureHidden: !actor?.measureHidden });
+            });
 
             row.querySelectorAll('input[data-field]').forEach(input => {
                 input.addEventListener('change', async () => {
