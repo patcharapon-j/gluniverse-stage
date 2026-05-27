@@ -475,7 +475,7 @@ export class GMPanel extends foundry.applications.api.ApplicationV2 {
 
             // Browse image
             card.querySelector('[data-action="browse-image"]')?.addEventListener('click', async () => {
-                const fp = new FilePicker({
+                const fp = new foundry.applications.apps.FilePicker.implementation({
                     type: 'image',
                     current: card.querySelector('[data-field="image"]')?.value || '',
                     callback: async (path) => {
