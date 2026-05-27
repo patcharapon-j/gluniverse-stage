@@ -1,6 +1,6 @@
 # GLUniverse Stage - Visual Novel Presenter
 
-A visual novel style presentation system for Foundry VTT v13. GMs can present characters on-screen for all players with animations, highlights, and cinematic staging.
+A visual novel style presentation system for Foundry VTT v13 and v14. GMs can present characters on-screen for all players with animations, highlights, and cinematic staging.
 
 ## Features
 
@@ -60,7 +60,7 @@ The stage overlay appears automatically when the GM shows it. Characters display
 
 ## Compatibility
 
-- **Foundry VTT**: v13+
+- **Foundry VTT**: v13–v14
 - **System**: System agnostic (works with any game system)
 
 ## License
